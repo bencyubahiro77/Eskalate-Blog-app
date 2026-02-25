@@ -69,7 +69,7 @@ Paginated endpoints include:
 |---|---|
 | Node.js | ≥ 18 |
 | PostgreSQL | ≥ 14 |
-| Redis | ≥ 6 (required by BullMQ for the job queue) |
+| Docker | Any recent version (used to run Redis locally) |
 
 ---
 
@@ -91,6 +91,10 @@ npm install
 Create a `.env` file in the project root:
 
 ```env
+# Server
+PORT=3000
+NODE_ENV=development
+
 # PostgreSQL connection string
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE"
 
@@ -98,12 +102,9 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE"
 JWT_SECRET="your_super_secret_key"
 JWT_EXPIRES_IN="24h"
 
-# Redis (for BullMQ analytics queue)
-REDIS_HOST="127.0.0.1"
+# Redis — local Docker instance (see step 6)
+REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
-
-# Server
-PORT=3000
 ```
 
 > If you are using **Supabase**, get your connection string from:
@@ -117,7 +118,7 @@ PORT=3000
 npx prisma migrate deploy
 ```
 
-> For development (creates a migration file from schema changes):
+> For development (creates a new migration from schema changes):
 > ```bash
 > npx prisma migrate dev --name init
 > ```
@@ -128,17 +129,18 @@ npx prisma migrate deploy
 npx prisma generate
 ```
 
-### 6. Start Redis
-
-Make sure Redis is running locally:
+### 6. Start Redis (via Docker)
 
 ```bash
-# Linux / macOS
-redis-server
-
-# Windows (via WSL or Docker)
-docker run -d -p 6379:6379 redis:alpine
+docker run -d --name redis-local -p 6379:6379 redis:alpine
 ```
+
+This pulls the Redis image and starts it in the background on `127.0.0.1:6379`.
+
+> **After a system restart**, Redis won't auto-start. Run this before `npm run dev`:
+> ```bash
+> docker start redis-local
+> ```
 
 ### 7. Start the development server
 
@@ -178,7 +180,7 @@ API documentation is available at `http://localhost:3000/api-docs`.
 
 ## Running Tests
 
-All tests mock the database — no real DB or Redis connection needed.
+All tests mock the database — **no real DB or Redis connection needed**.
 
 ```bash
 npx jest --forceExit
@@ -190,6 +192,8 @@ Test Suites: 4 passed, 4 total
 Tests:       34 passed, 34 total
 ```
 
+The Prisma mock lives in `src/config/__mocks__/prisma.ts`. Jest picks it up automatically whenever a test file calls `jest.mock('../src/config/prisma')` — no duplication needed across test files.
+
 ---
 
 ## Project Structure
@@ -200,12 +204,14 @@ src/
 ├── server.ts               # Entry point (starts server + analytics job)
 ├── config/
 │   ├── prisma.ts           # Prisma client singleton
-│   └── swagger.ts          # Swagger configuration
+│   ├── swagger.ts          # Swagger configuration
+│   └── __mocks__/
+│       └── prisma.ts       # Auto-mock for tests (jest.mock auto-resolves this)
 ├── controllers/            # Route handlers (thin — delegate to services)
 ├── services/               # Business logic
 ├── middlewares/
 │   ├── auth.middleware.ts  # authenticate + authorize
-│   └── error.middleware.ts # Global error handler (AppError + ZodError)
+│   └── error.middleware.ts # Global error handler (AppError + ZodError → 400)
 ├── jobs/
 │   └── analytics.job.ts    # BullMQ queue + worker (daily read aggregation)
 ├── routes/                 # Route definitions
