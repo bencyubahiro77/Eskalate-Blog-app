@@ -9,6 +9,10 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     console.log(`Server is running on port ${PORT}`);
 
+    // Run analytics aggregation immediately on startup
+    await analyticsQueue.add('startup-aggregation', {});
+    console.log('Immediate analytics job triggered');
+
     // Schedule the analytics aggregation job to run daily at 01:00 UTC
     await analyticsQueue.add(
         'daily-aggregation',
@@ -19,7 +23,7 @@ app.listen(PORT, async () => {
             removeOnFail: false,
         }
     );
-    console.log('Analytics job scheduled (daily @ 01:00 UTC)');
+    console.log('Recurring analytics job scheduled (daily @ 01:00 UTC)');
 
     // Keep a reference so the worker isn't garbage collected
     analyticsWorker.on('failed', (job, err) => {

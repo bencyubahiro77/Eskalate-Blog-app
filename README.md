@@ -76,7 +76,7 @@ Paginated endpoints include:
 ### 1. Clone the repository
 
 ```bash
-git clone <your-repo-url>
+git clone "https://github.com/bencyubahiro77/Eskalate-Blog-app.git"
 cd blog-app
 ```
 
@@ -96,7 +96,7 @@ PORT=3000
 NODE_ENV=development
 
 # PostgreSQL connection string
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE"
+DATABASE_URL="your postgresql connection string"
 
 # JWT
 JWT_SECRET="your_super_secret_key"
@@ -123,13 +123,32 @@ npx prisma migrate deploy
 > npx prisma migrate dev --name init
 > ```
 
-### 5. Generate the Prisma client
+### 5. Seed the database
+
+Populate the database with test users and sample articles:
+
+```bash
+npx prisma db seed
+```
+
+This creates the following ready-to-use accounts:
+
+| Role | Email | Password |
+|---|---|---|
+| **Author** | `author@test.com` | `Password123!` |
+| **Reader** | `reader@test.com` | `Password123!` |
+
+It also inserts **3 sample articles** (2 Published, 1 Draft) authored by the test author.
+
+> The seed uses `upsert` so it is safe to re-run at any time — existing records are never duplicated.
+
+### 6. Generate the Prisma client
 
 ```bash
 npx prisma generate
 ```
 
-### 6. Start Redis (via Docker)
+### 7. Start Redis (via Docker)
 
 ```bash
 docker run -d --name redis-local -p 6379:6379 redis:alpine
@@ -142,7 +161,7 @@ This pulls the Redis image and starts it in the background on `127.0.0.1:6379`.
 > docker start redis-local
 > ```
 
-### 7. Start the development server
+### 8. Start the development server
 
 ```bash
 npm run dev
@@ -180,6 +199,8 @@ API documentation is available at `http://localhost:3000/api-docs`.
 
 ## Running Tests
 
+### Automated tests (unit)
+
 All tests mock the database — **no real DB or Redis connection needed**.
 
 ```bash
@@ -193,6 +214,23 @@ Tests:       34 passed, 34 total
 ```
 
 The Prisma mock lives in `src/config/__mocks__/prisma.ts`. Jest picks it up automatically whenever a test file calls `jest.mock('../src/config/prisma')` — no duplication needed across test files.
+
+### Manual / API testing with seeded data
+
+After running the seeder (step 5) and starting the server, you can exercise every endpoint immediately using the built-in Swagger UI:
+
+1. Open **`http://localhost:3000/api-docs`** in your browser.
+2. **Login** — call `POST /auth/login` with one of the seeded accounts:
+   - Author: `{ "email": "author@test.com", "password": "Password123!" }`
+   - Reader: `{ "email": "reader@test.com", "password": "Password123!" }`
+3. Copy the returned JWT token.
+4. Click **Authorize** (🔒) in Swagger UI and paste the token as `Bearer <token>`.
+5. You can now test any authenticated endpoint:
+   - **Author routes** — create/update/delete articles, view dashboard (`/author/dashboard`)
+   - **Public feed** — browse and filter articles (`GET /articles`)
+   - **Read tracking** — view an article detail (`GET /articles/:id`) to generate a read log
+
+> The seeded author already owns 2 Published articles and 1 Draft, so the dashboard and public feed return real data immediately.
 
 ---
 

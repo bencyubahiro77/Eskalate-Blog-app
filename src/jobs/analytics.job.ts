@@ -44,7 +44,7 @@ export const analyticsWorker = new Worker(
                     },
                 },
                 update: {
-                    viewCount: { increment: count },
+                    viewCount: count,
                 },
                 create: {
                     articleId,
