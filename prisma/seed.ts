@@ -6,8 +6,6 @@ const prisma = new PrismaClient();
 
 
 async function main() {
-    console.log('Seed started...');
-
     const password = await argon2.hash('Password123!');
 
     // Create an author

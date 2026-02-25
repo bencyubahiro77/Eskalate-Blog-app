@@ -14,12 +14,6 @@ export const analyticsQueue = new Queue('analytics', {
 export const analyticsWorker = new Worker(
     'analytics',
     async (job: Job) => {
-        console.log(`Processing analytics job: ${job.id}`);
-
-        // Aggregation logic: Group by ArticleId and Date (GMT)
-        // For simplicity in this assessment, we'll process all ReadLogs from the previous day
-        // In a real system, we'd use a more sophisticated windowing or incremental approach
-
         const yesterday = new Date();
         yesterday.setUTCDate(yesterday.getUTCDate() - 1);
         yesterday.setUTCHours(0, 0, 0, 0);

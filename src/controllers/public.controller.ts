@@ -8,7 +8,6 @@ export class PublicController {
         try {
             const page = parseInt(req.query.page as string) || 1;
             const size = parseInt(req.query.size as string) || 10;
-            const { category, author, q } = req.query;
 
             const { articles, total } = await PublicService.getArticles({
                 category: req.query.category as string,
@@ -35,7 +34,7 @@ export class PublicController {
 
     static async getArticleDetail(req: AuthRequest, res: Response, next: NextFunction) {
         try {
-            const article = await PublicService.getArticleById(req.params.id, req.user?.id);
+            const article = await PublicService.getArticleById(req.params.id as string, req.user?.id);
             const response: BaseResponse = {
                 Success: true,
                 Message: 'Article retrieved successfully',
